@@ -3,11 +3,18 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
+	"os/signal"
+	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/streadway/amqp"
 )
+
+// number of publishes
+var pubCount uint64
 
 const routingKey string = "logs-routing-key"
 const exchangeName string = "logs-exchange"
@@ -64,6 +71,9 @@ func main() {
 
 	forever := make(chan bool)
 
+	// Setup our Ctrl+C (Exit) handler
+	SetupCloseHandler()
+
 	// Send messages infinitely
 	go func() {
 		for {
@@ -86,20 +96,34 @@ func main() {
 					ContentType: "text/plain",
 					Body:        []byte(messageBody),
 				})
-			failOnError(err, "Failed to publish a message")
+			if !failOnError(err, "Failed to publish a message") {
+				atomic.AddUint64(&pubCount, 1)
+			}
 
 			// Sleep for 500ms before next log
 			time.Sleep(time.Millisecond * 500)
 		}
-
 	}()
 	<-forever
 }
 
 func failOnError(err error, msg string) bool {
 	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-		panic("Shutting down")
+		defer log.Fatalf("%s: %s", msg, err)
 	}
-	return true
+	return false
+}
+
+// SetupCloseHandler creates a 'listener' on a new goroutine which will notify the
+// program if it receives an exit interrupt from the OS. We then handle this by calling
+// our clean up procedure and exiting the program.
+func SetupCloseHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		log.Println("Exiting Program")
+		log.Printf("Number of logs published: %d", pubCount)
+		os.Exit(0)
+	}()
 }

@@ -1,7 +1,12 @@
 package main
 
 import (
+	"flag"
+	"io"
 	"log"
+	"os"
+
+	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 
 	"github.com/streadway/amqp"
 )
@@ -10,6 +15,20 @@ const routingKey string = "logs-routing-key"
 const exchangeName string = "logs-exchange"
 
 func main() {
+	var graylogAddr string
+
+	flag.StringVar(&graylogAddr, "graylog", "", "graylog server addr")
+	flag.Parse()
+
+	if graylogAddr != "" {
+		gelfWriter, err := gelf.NewUDPWriter(graylogAddr)
+		if err != nil {
+			log.Fatalf("gelf.NewWriter: %s", err)
+		}
+		// log to both stderr and graylog2
+		log.SetOutput(io.MultiWriter(os.Stderr, gelfWriter))
+	}
+
 	conn, err := amqp.Dial("amqp://user:bitnami@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
