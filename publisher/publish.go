@@ -9,6 +9,9 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const routingKey string = "logs-routing-key"
+const exchangeName string = "logs-exchange"
+
 func main() {
 
 	// New RabbitMQ AMQP connection
@@ -23,6 +26,18 @@ func main() {
 	log.Println("Successfully created a new channel")
 	defer channel.Close()
 
+	// Create new Exchange (Direct Exchange)
+	err = channel.ExchangeDeclare(
+		exchangeName, // name
+		"direct",     // type
+		true,         // durable
+		false,        // auto-deleted
+		false,        // internal
+		false,        // no-wait
+		nil,          // arguments
+	)
+	failOnError(err, "Failed to declare an exchange")
+
 	// Declare a new Queue
 	queue, err := channel.QueueDeclare(
 		"log-queue", // name
@@ -35,6 +50,15 @@ func main() {
 	log.Println("Created a new Queue: `log-queue`")
 	failOnError(err, "Failed to declare a queue")
 
+	// Bind the Exchange and Queue
+	err = channel.QueueBind(
+		queue.Name,   // queue name
+		routingKey,   // routing key
+		exchangeName, // exchange
+		false,
+		nil,
+	)
+
 	// Starting Log stream
 	log.Printf(" [*] Sending messages. To exit press CTRL+C")
 
@@ -43,7 +67,8 @@ func main() {
 	// Send messages infinitely
 	go func() {
 		for {
-			cmd := exec.Command("flog", "-n", "1", "-f", "apache_combined")
+			// cmd := exec.Command("flog", "-n", "1", "-f", "apache_combined")
+			cmd := exec.Command("flog", "-n", "1", "-f", "json")
 			out, err := cmd.StdoutPipe()
 			if err != nil {
 				panic(err)
@@ -53,10 +78,10 @@ func main() {
 
 			// Publish log to queue
 			err = channel.Publish(
-				"",         // exchange
-				queue.Name, // routing key
-				false,      // mandatory
-				false,      // immediate
+				"logs-exchange", // exchange
+				routingKey,      // routing key
+				false,           // mandatory
+				false,           // immediate
 				amqp.Publishing{
 					ContentType: "text/plain",
 					Body:        []byte(messageBody),
@@ -64,7 +89,7 @@ func main() {
 			failOnError(err, "Failed to publish a message")
 
 			// Sleep for 500ms before next log
-			time.Sleep(time.Millisecond * 400)
+			time.Sleep(time.Millisecond * 500)
 		}
 
 	}()

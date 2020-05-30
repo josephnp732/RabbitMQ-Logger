@@ -6,19 +6,23 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const routingKey string = "logs-routing-key"
+const exchangeName string = "logs-exchange"
+
 func main() {
 	conn, err := amqp.Dial("amqp://user:bitnami@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
-	ch, err := conn.Channel()
+	// Create Channel
+	channel, err := conn.Channel()
 	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
+	defer channel.Close()
 
-	// we declare the queue here, as well.
+	// Declaring Queue here as well
 	// Because we might start the consumer before the publisher,
 	// we want to make sure the queue exists before we try to consume messages from it.
-	q, err := ch.QueueDeclare(
+	queue, err := channel.QueueDeclare(
 		"log-queue", // name
 		true,        // durable
 		false,       // delete when unused
@@ -28,9 +32,31 @@ func main() {
 	)
 	failOnError(err, "Failed to declare a queue")
 
-	msgs, err := ch.Consume(
-		q.Name,         // queue
-		"log-consumer", // consumer
+	// Create new Exchange (Direct Exchange)
+	err = channel.ExchangeDeclare(
+		exchangeName, // name
+		"direct",     // type
+		true,         // durable
+		false,        // auto-deleted
+		false,        // internal
+		false,        // no-wait
+		nil,          // arguments
+	)
+	failOnError(err, "Failed to declare an exchange")
+
+	// Bind the Exchange and Queue
+	err = channel.QueueBind(
+		queue.Name,   // queue name
+		routingKey,   // routing key
+		exchangeName, // exchange
+		false,
+		nil,
+	)
+
+	// Consume message
+	msgs, err := channel.Consume(
+		queue.Name,     // queue
+		"log-consumer", // consumer name
 		true,           // auto-ack
 		false,          // exclusive
 		false,          // no-local
@@ -43,7 +69,7 @@ func main() {
 
 	go func() {
 		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
+			log.Printf(string(d.Body))
 		}
 	}()
 
