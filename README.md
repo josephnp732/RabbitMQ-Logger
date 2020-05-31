@@ -31,6 +31,10 @@ The Go Lang program generates random Apache-Commons logs every 400ms into a Rabb
 * Change to the publisher directory&nbsp;&nbsp; `cd ./publisher`
 * Start the publisher:&nbsp;&nbsp; `go run publish.go`
 
+``` diff
+! Alternatively, use MakeFile to run the targets
++ Example: make -f MakeFile install
+```
 
 #### _TODO:_
 

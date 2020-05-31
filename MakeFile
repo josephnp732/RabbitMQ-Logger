@@ -1,0 +1,28 @@
+# Install Dependencies and go requirements
+install:
+	brew tap mingrammer/flog
+	brew install flog
+	go mod download
+
+.PHONY:
+build:
+	go build ./publisher/publish.go
+	go build ./subscriber/subscribe.go
+
+# Spin-up RabbitMQ docker container
+docker_rabbitmq:
+	docker-compose -d -f RabbitMQ/docker-compose.yml up
+
+# Spin-up Graylog docker container
+docker_graylog:
+	docker-compose -d -f graylog/docker-compose.yaml up
+
+# Start publisher
+.PHONY: 
+publisher:
+	go run ./publisher/publish.go
+
+# Start subscriber
+.PHONY: 
+subscriber:
+	go run ./subscriber/subscribe.go
