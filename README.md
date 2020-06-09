@@ -21,11 +21,13 @@ The Go Lang program generates random Apache-Commons logs every 400ms into a Rabb
 * `go mod download` to download the requirements
 * `go mod vendor` to download to local reposistory
 * Spin-up a RabbitMQ docker container from the _./RabbitMQ_ directory (`docker-compose up -d`)
+ - RabbitMQ console (http://localhost:15672/) default credentials `UserName: user` and `password: bitnami`
 * Spin-up a Graylog Instance from the _./graylog_ directory (`docker-compose up -d`)
+ - Graylog console (http://localhost:9000/) default credentials `UserName: admin` and `password: admin`
 
 #### Running the subscriber: 
-* Change to the publisher directory&nbsp;&nbsp; `cd ./subscriber`
-* Start the publisher:&nbsp;&nbsp; `go run subscribe.go`
+* Change to the subscriber directory&nbsp;&nbsp; `cd ./subscriber`
+* Start the subscriber:&nbsp;&nbsp; `go run subscriber.go -graylog=localhost:12201`
 
 #### Running the publisher: 
 * Change to the publisher directory&nbsp;&nbsp; `cd ./publisher`

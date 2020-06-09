@@ -77,8 +77,8 @@ func main() {
 	// Send messages infinitely
 	go func() {
 		for {
-			// cmd := exec.Command("flog", "-n", "1", "-f", "apache_combined")
-			cmd := exec.Command("flog", "-n", "1", "-f", "json")
+			cmd := exec.Command("flog", "-n", "1", "-f", "apache_combined")
+			// cmd := exec.Command("flog", "-n", "1", "-f", "json")
 			out, err := cmd.StdoutPipe()
 			if err != nil {
 				panic(err)
