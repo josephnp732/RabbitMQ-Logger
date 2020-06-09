@@ -17,7 +17,8 @@ const exchangeName string = "logs-exchange"
 func main() {
 	var graylogAddr string
 
-	flag.StringVar(&graylogAddr, "graylog", "", "graylog server addr")
+	// default port :12201
+	flag.StringVar(&graylogAddr, "graylog", "localhost:12201", "graylog server addr")
 	flag.Parse()
 
 	if graylogAddr != "" {
@@ -53,13 +54,13 @@ func main() {
 
 	// Create new Exchange (Direct Exchange)
 	err = channel.ExchangeDeclare(
-		exchangeName, // name
-		"direct",     // type
-		true,         // durable
-		false,        // auto-deleted
-		false,        // internal
-		false,        // no-wait
-		nil,          // arguments
+		exchangeName,        // name
+		amqp.ExchangeDirect, // type
+		true,                // durable
+		false,               // auto-deleted
+		false,               // internal
+		false,               // no-wait
+		nil,                 // arguments
 	)
 	failOnError(err, "Failed to declare an exchange")
 

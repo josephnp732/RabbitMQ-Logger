@@ -35,13 +35,13 @@ func main() {
 
 	// Create new Exchange (Direct Exchange)
 	err = channel.ExchangeDeclare(
-		exchangeName, // name
-		"direct",     // type
-		true,         // durable
-		false,        // auto-deleted
-		false,        // internal
-		false,        // no-wait
-		nil,          // arguments
+		exchangeName,        // name
+		amqp.ExchangeDirect, // type
+		true,                // durable
+		false,               // auto-deleted
+		false,               // internal
+		false,               // no-wait
+		nil,                 // arguments
 	)
 	failOnError(err, "Failed to declare an exchange")
 
